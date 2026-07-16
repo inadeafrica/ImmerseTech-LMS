@@ -1,0 +1,43 @@
+services:
+  db:
+    image: mariadb:11.4
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:-changeme}
+      MARIADB_USER: ${MOODLE_DB_USER:-moodle}
+      MARIADB_PASSWORD: ${MOODLE_DB_PASSWORD:-changeme}
+      MARIADB_DATABASE: ${MOODLE_DB_NAME:-moodle}
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  webserver:
+    image: moodlehq/moodle-php-apache:8.4
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${MOODLE_HTTP_PORT:-8080}:80"
+    environment:
+      MOODLE_DB_HOST: db
+      MOODLE_DB_NAME: ${MOODLE_DB_NAME:-moodle}
+      MOODLE_DB_USER: ${MOODLE_DB_USER:-moodle}
+      MOODLE_DB_PASSWORD: ${MOODLE_DB_PASSWORD:-changeme}
+      MOODLE_WWWROOT: ${MOODLE_WWWROOT:-http://localhost:8080}
+    volumes:
+      # Moodle core is a git submodule (see moodle/) — clone-based, so the
+      # real source tree is what's running, not baked into a pre-built image.
+      - ./moodle:/var/www/html
+      - ./config/config.php:/var/www/html/config.php:ro
+      - moodledata:/var/www/moodledata
+      # Custom add-on plugins land here as they're built — see plugins/README.md.
+      - ./plugins/local/vrtracking:/var/www/html/local/vrtracking
+
+volumes:
+  db_data:
+  moodledata:
