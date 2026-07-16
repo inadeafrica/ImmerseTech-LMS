@@ -2,7 +2,7 @@
 
 Per [ADR 0001](../docs/decisions/0001-platform-foundation.md), the core LMS runs on stock Moodle. This directory holds the ImmerseTech-specific plugins that fill the gaps Moodle doesn't cover natively. Each plugin is developed independently so it can be versioned, tested, and upstreamed/swapped without forking Moodle core.
 
-Layout mirrors Moodle's own plugin-type directory structure (`plugins/<type-dir>/<name>` → mounts to `/bitnami/moodle/<type-dir>/<name>` in the container), so a plugin's location here doubles as documentation of which Moodle extension point it uses.
+Layout mirrors Moodle's own plugin-type directory structure (`plugins/<type-dir>/<name>` → bind-mounted to `moodle/<type-dir>/<name>`, i.e. `/var/www/html/<type-dir>/<name>` in the `webserver` container — see `docker-compose.yml`), so a plugin's location here doubles as documentation of which Moodle extension point it uses.
 
 | Plugin | Component | Moodle plugin type | Spec section | Status |
 |---|---|---|---|---|
