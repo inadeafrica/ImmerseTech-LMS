@@ -80,6 +80,50 @@ final class session_repository_test extends \advanced_testcase {
         $this->assertEquals($first->id, $sessions[1]->id);
     }
 
+    public function test_record_populates_competencyid_from_linked_competency(): void {
+        global $DB;
+        $this->resetAfterTest();
+
+        $generator = $this->getDataGenerator();
+        $lpg = $generator->get_plugin_generator('core_competency');
+        $course = $generator->create_course();
+        $activity = $generator->create_module('page', ['course' => $course->id]);
+        $framework = $lpg->create_framework();
+        $competency = $lpg->create_competency(['competencyframeworkid' => $framework->get('id')]);
+        $lpg->create_course_module_competency(['cmid' => $activity->cmid, 'competencyid' => $competency->get('id')]);
+
+        $user = $generator->create_user();
+        $session = session_repository::record(['userid' => $user->id, 'cmid' => $activity->cmid, 'status' => 'completed']);
+
+        $record = $DB->get_record('local_vrtracking_session', ['id' => $session->id], '*', MUST_EXIST);
+        $this->assertEquals($competency->get('id'), $record->competencyid);
+    }
+
+    public function test_get_linked_competency_ids(): void {
+        $this->resetAfterTest();
+
+        $generator = $this->getDataGenerator();
+        $lpg = $generator->get_plugin_generator('core_competency');
+        $course = $generator->create_course();
+        $activity = $generator->create_module('page', ['course' => $course->id]);
+        $framework = $lpg->create_framework();
+        $competency1 = $lpg->create_competency(['competencyframeworkid' => $framework->get('id')]);
+        $competency2 = $lpg->create_competency(['competencyframeworkid' => $framework->get('id')]);
+        $lpg->create_course_module_competency(['cmid' => $activity->cmid, 'competencyid' => $competency1->get('id')]);
+        $lpg->create_course_module_competency(['cmid' => $activity->cmid, 'competencyid' => $competency2->get('id')]);
+
+        $ids = session_repository::get_linked_competency_ids($activity->cmid);
+        $this->assertEqualsCanonicalizing(
+            [(int) $competency1->get('id'), (int) $competency2->get('id')],
+            $ids
+        );
+
+        // An activity with no linked competencies returns an empty array,
+        // not null or a fatal.
+        $other = $generator->create_module('page', ['course' => $course->id]);
+        $this->assertSame([], session_repository::get_linked_competency_ids($other->cmid));
+    }
+
     public function test_get_sessions_for_user(): void {
         $this->resetAfterTest();
         $user = $this->getDataGenerator()->create_user();

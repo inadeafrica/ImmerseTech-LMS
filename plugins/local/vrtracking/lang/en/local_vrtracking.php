@@ -11,6 +11,10 @@ $string['webservice_heading_desc'] = 'Completion events are received via the "Im
 $string['vrtracking:receivewebhook'] = 'Receive VR completion events';
 $string['vrtracking:viewsessions'] = 'View VR session records';
 
+$string['evidence_vrcompletion'] = 'Completed the VR simulation "{$a}" — pending assessor sign-off';
+$string['evidencenote_timeontask'] = 'Time on task: {$a} min.';
+$string['evidencenote_score'] = 'Score: {$a}.';
+
 $string['privacy:metadata:local_vrtracking_session'] = 'Records of VR practical completion/progress events reported by the VR partner platform.';
 $string['privacy:metadata:local_vrtracking_session:userid'] = 'The id of the trainee who took the VR session.';
 $string['privacy:metadata:local_vrtracking_session:cmid'] = 'The course module (VR practical/lesson) the session belongs to.';
