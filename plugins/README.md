@@ -6,13 +6,13 @@ Layout mirrors Moodle's own plugin-type directory structure (`plugins/<type-dir>
 
 | Plugin | Component | Moodle plugin type | Spec section | Status |
 |---|---|---|---|---|
-| [`local/vrtracking`](local/vrtracking) | `local_vrtracking` | Local plugin | 5.4, 9.2 | Core structure implemented |
+| [`local/vrtracking`](local/vrtracking) | `local_vrtracking` | Local plugin | 5.4, 9.2 | Feature-complete (partner payload shape TBD) |
 | [`availability/condition/safetygating`](availability/condition/safetygating) | `availability_safetygating` | Availability condition | 5.7 | Core structure implemented |
 | [`payment/gateway/paystack`](payment/gateway/paystack) | `paygw_paystack` | Payment gateway | 5.12 | Core structure implemented |
 | [`payment/gateway/flutterwave`](payment/gateway/flutterwave) | `paygw_flutterwave` | Payment gateway | 5.12 | Core structure implemented |
 | [`plagiarism/aicontent`](plagiarism/aicontent) | `plagiarism_aicontent` | Plagiarism plugin | 5.2 | Core structure implemented |
 
-"Core structure implemented" means: the plugin installs cleanly, implements the Moodle interfaces its type requires with real (not placeholder) logic, and has a working database schema, capabilities/services, language strings, a `tests/` suite exercising that logic, and — where the plugin handles personal data — a privacy provider. What's explicitly stubbed (a third-party API call, mostly) is marked `TODO` in the relevant class and listed in that plugin's own `README.md`. None of the five are feature-complete end to end yet; see each plugin's README for what's left.
+"Core structure implemented" means: the plugin installs cleanly, implements the Moodle interfaces its type requires with real (not placeholder) logic, and has a working database schema, capabilities/services, language strings, a `tests/` suite exercising that logic, and — where the plugin handles personal data — a privacy provider. What's explicitly stubbed (typically a third-party API call) is marked `TODO` in the relevant class and listed in that plugin's own `README.md`. `local_vrtracking` is the one plugin whose logic doesn't depend on an external API at all — its "VR completion → competency evidence, pending assessor sign-off" pipeline is genuinely feature-complete; the other four still have real gaps (mostly the third-party API integration itself). See each plugin's README for what's left.
 
 ## Why these plugin types
 
@@ -24,7 +24,7 @@ Layout mirrors Moodle's own plugin-type directory structure (`plugins/<type-dir>
 ## Tests
 
 Every plugin has a `tests/` suite (real Moodle PHPUnit tests, `\advanced_testcase`-based) covering the logic
-described above — 51 tests, 137 assertions in total as of this writing. They were written and run against an
+described above — 59 tests, 159 assertions in total as of this writing. They were written and run against an
 actual Moodle 5.0.2 (`MOODLE_502_STABLE`, matching the `moodle/` submodule) + PostgreSQL install, not just
 syntax-checked or exercised against hand-written stubs — see "Running the tests" below. Running them caught one real
 bug during development: `availability_safetygating\condition::is_available()` compared `completionstate` with a
@@ -35,8 +35,11 @@ for the regression coverage.
 
 What each suite covers:
 
-- **`local_vrtracking`** — `session_repository` persistence; the `local_vrtracking_record_completion` webhook end to
-  end (success, missing capability, unknown status, unknown course module); the privacy provider's export/delete.
+- **`local_vrtracking`** — `session_repository` persistence, including the competency-linking lookup;
+  `competency_updater` (evidence logged and the trainee's competency flagged for review on a `completed` event,
+  across every competency linked to the activity, competency subsystem disabled, deleted course module); the
+  `local_vrtracking_record_completion` webhook end to end (success, missing capability, unknown status, unknown
+  course module, and the full completion → competency-evidence path); the privacy provider's export/delete.
 - **`availability_safetygating`** — constructor validation, `save()`/`get_json()` round-trip, `is_available()` and
   `get_description()` against a real course + completion-tracked activity (including the expiry/re-lock path, by
   backdating a real `course_modules_completion.timemodified` row), the fail-closed behaviour when the induction

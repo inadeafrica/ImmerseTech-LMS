@@ -37,14 +37,41 @@ class session_repository {
     /**
      * Resolve the competency (if any) that a VR-tracked course module satisfies.
      *
-     * TODO: Moodle's course_modules_completion/competency linking convention
-     * for this mapping hasn't been picked yet (course-module custom field
-     * vs. a dedicated local_vrtracking mapping table) — returns null until
-     * then, which record_completion::execute() and competency_updater both
-     * already treat as "no linked competency to update".
+     * Uses Moodle's own activity-level competency linking (the
+     * "Competencies" tab every course-module edit form already has, via
+     * core_competency\course_module_competency) rather than inventing a
+     * separate mapping — an instructor tags the VR practical with the
+     * competency(ies) it demonstrates exactly the same way they would for
+     * any other activity.
+     *
+     * @return int|null The first linked competency, for the session
+     *   record's single competencyid column. competency_updater re-reads
+     *   the full set via get_linked_competency_ids() rather than relying on
+     *   this single value, since an activity can be tagged with more than
+     *   one competency.
      */
     protected static function find_linked_competency(int $cmid): ?int {
-        return null;
+        $ids = self::get_linked_competency_ids($cmid);
+
+        return $ids ? reset($ids) : null;
+    }
+
+    /**
+     * All competencies a course module is tagged with, in display order.
+     *
+     * @return int[]
+     */
+    public static function get_linked_competency_ids(int $cmid): array {
+        if (!class_exists('\core_competency\course_module_competency')) {
+            // Competency subsystem not present on this Moodle version.
+            return [];
+        }
+
+        $links = \core_competency\course_module_competency::list_course_module_competencies($cmid);
+
+        return array_map(static function ($link): int {
+            return (int) $link->get('competencyid');
+        }, $links);
     }
 
     /**

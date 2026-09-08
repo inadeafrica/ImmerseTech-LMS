@@ -85,8 +85,11 @@ final class record_completion_test extends \advanced_testcase {
 
     public function test_in_progress_does_not_touch_competency_updater(): void {
         // Regression guard: an in_progress event must still succeed and be
-        // recorded, without requiring the (unimplemented) competency-update
-        // path that only runs for 'completed' events.
+        // recorded, and must not run the completion-only competency-update
+        // path (verified by there being no linked competency at all here —
+        // if it ran, add_evidence() would find nothing to do and no-op
+        // anyway, so the real guard is test_end_to_end_logs_competency_
+        // evidence_only_on_completed below).
         $this->resetAfterTest();
         $this->setAdminUser();
 
@@ -95,5 +98,45 @@ final class record_completion_test extends \advanced_testcase {
 
         $result = record_completion::execute((int) $cm->id, $trainee->id, '', 'in_progress', 60, null, '');
         $this->assertEquals('ok', $result['status']);
+    }
+
+    public function test_end_to_end_logs_competency_evidence_only_on_completed(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        [$course, $cm] = $this->create_fixture_course();
+        $lpg = $this->getDataGenerator()->get_plugin_generator('core_competency');
+        $framework = $lpg->create_framework();
+        $competency = $lpg->create_competency(['competencyframeworkid' => $framework->get('id')]);
+        $lpg->create_course_module_competency(['cmid' => $cm->id, 'competencyid' => $competency->get('id')]);
+
+        $trainee = $this->getDataGenerator()->create_user();
+
+        // in_progress: recorded, but no competency evidence yet.
+        record_completion::execute((int) $cm->id, $trainee->id, 'sess-1', 'in_progress', 120, null, '');
+        $this->assertEquals(0, $DB->count_records('competency_evidence'));
+
+        // completed: recorded, and now the linked competency has evidence
+        // pending assessor review (spec 5.4, 5.6).
+        record_completion::execute(
+            (int) $cm->id,
+            $trainee->id,
+            'sess-1',
+            'completed',
+            600,
+            92.5,
+            'https://vr-partner.example/replay/1'
+        );
+
+        $usercompetency = \core_competency\user_competency::get_record([
+            'userid' => $trainee->id,
+            'competencyid' => $competency->get('id'),
+        ]);
+        $this->assertNotFalse($usercompetency);
+        $this->assertEquals(
+            \core_competency\user_competency::STATUS_WAITING_FOR_REVIEW,
+            $usercompetency->get('status')
+        );
     }
 }
