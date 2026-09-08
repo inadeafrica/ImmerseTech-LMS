@@ -37,15 +37,11 @@ services:
     volumes:
       - moodle_data:/bitnami/moodle
       - moodledata_data:/bitnami/moodledata
-      # Custom add-on plugins — see plugins/README.md for what each one is.
-      # Mount points follow Moodle's own plugin-type directory layout
-      # (lib/components.json), so the local path segment after plugins/
-      # doubles as the Moodle plugin type.
+      # Custom add-on plugins land here as they're built — see plugins/README.md
+      # for the planned mount points. Deliberately not bind-mounted yet: an
+      # incomplete plugin directory (missing version.php etc.) makes Moodle's
+      # plugin scanner fail, which would break this base install.
       - ./plugins/local/vrtracking:/bitnami/moodle/local/vrtracking
-      - ./plugins/availability/condition/safetygating:/bitnami/moodle/availability/condition/safetygating
-      - ./plugins/payment/gateway/paystack:/bitnami/moodle/payment/gateway/paystack
-      - ./plugins/payment/gateway/flutterwave:/bitnami/moodle/payment/gateway/flutterwave
-      - ./plugins/plagiarism/aicontent:/bitnami/moodle/plagiarism/aicontent
 
 volumes:
   mariadb_data:
