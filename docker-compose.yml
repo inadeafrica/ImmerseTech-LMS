@@ -1,49 +1,43 @@
 services:
-  mariadb:
-    image: bitnami/mariadb:11.4
+  db:
+    image: mariadb:11.4
     restart: unless-stopped
     environment:
       MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:-changeme}
-      MARIADB_USER: ${MOODLE_DATABASE_USER:-bn_moodle}
-      MARIADB_PASSWORD: ${MOODLE_DATABASE_PASSWORD:-changeme}
-      MARIADB_DATABASE: ${MOODLE_DATABASE_NAME:-bitnami_moodle}
+      MARIADB_USER: ${MOODLE_DB_USER:-moodle}
+      MARIADB_PASSWORD: ${MOODLE_DB_PASSWORD:-changeme}
+      MARIADB_DATABASE: ${MOODLE_DB_NAME:-moodle}
     volumes:
-      - mariadb_data:/bitnami/mariadb
+      - db_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MARIADB_ROOT_PASSWORD:-changeme}"]
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 10s
       timeout: 5s
       retries: 10
 
-  moodle:
-    image: bitnami/moodle:5
+  webserver:
+    image: moodlehq/moodle-php-apache:8.4
     restart: unless-stopped
     depends_on:
-      mariadb:
+      db:
         condition: service_healthy
     ports:
-      - "${MOODLE_HTTP_PORT:-8080}:8080"
-      - "${MOODLE_HTTPS_PORT:-8443}:8443"
+      - "${MOODLE_HTTP_PORT:-8080}:80"
     environment:
-      MOODLE_DATABASE_HOST: mariadb
-      MOODLE_DATABASE_USER: ${MOODLE_DATABASE_USER:-bn_moodle}
-      MOODLE_DATABASE_PASSWORD: ${MOODLE_DATABASE_PASSWORD:-changeme}
-      MOODLE_DATABASE_NAME: ${MOODLE_DATABASE_NAME:-bitnami_moodle}
-      MOODLE_USERNAME: ${MOODLE_ADMIN_USER:-admin}
-      MOODLE_PASSWORD: ${MOODLE_ADMIN_PASSWORD:-changeme}
-      MOODLE_EMAIL: ${MOODLE_ADMIN_EMAIL:-admin@immersetech.example}
-      MOODLE_SITE_NAME: ${MOODLE_SITE_NAME:-ImmerseTech LMS}
-      MOODLE_LANG: ${MOODLE_LANG:-en}
+      MOODLE_DB_HOST: db
+      MOODLE_DB_NAME: ${MOODLE_DB_NAME:-moodle}
+      MOODLE_DB_USER: ${MOODLE_DB_USER:-moodle}
+      MOODLE_DB_PASSWORD: ${MOODLE_DB_PASSWORD:-changeme}
+      MOODLE_WWWROOT: ${MOODLE_WWWROOT:-http://localhost:8080}
     volumes:
-      - moodle_data:/bitnami/moodle
-      - moodledata_data:/bitnami/moodledata
-      # Custom add-on plugins land here as they're built — see plugins/README.md
-      # for the planned mount points. Deliberately not bind-mounted yet: an
-      # incomplete plugin directory (missing version.php etc.) makes Moodle's
-      # plugin scanner fail, which would break this base install.
-      - ./plugins/local/vrtracking:/bitnami/moodle/local/vrtracking
+      # Moodle core is a git submodule (see moodle/) — clone-based, so the
+      # real source tree is what's running, not baked into a pre-built image.
+      - ./moodle:/var/www/html
+      - ./config/config.php:/var/www/html/config.php:ro
+      - moodledata:/var/www/moodledata
+      # Custom add-on plugins land here as they're built — see plugins/README.md.
+      - ./plugins/local/vrtracking:/var/www/html/local/vrtracking
 
 volumes:
-  mariadb_data:
-  moodle_data:
-  moodledata_data:
+  db_data:
+  moodledata:

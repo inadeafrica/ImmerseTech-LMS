@@ -6,18 +6,42 @@ See [`docs/SPECIFICATION.md`](docs/SPECIFICATION.md) for the full functional & t
 
 ## Architecture
 
-Stock **Moodle** (self-hosted) as the core platform, extended with a small set of ImmerseTech-specific plugins for the parts of the spec Moodle doesn't cover natively — see [`plugins/README.md`](plugins/README.md) for what those are and why each is built as the Moodle plugin type it is.
+Stock **Moodle** as the core platform, extended with a small set of ImmerseTech-specific plugins for the parts of the spec Moodle doesn't cover natively — see [`plugins/README.md`](plugins/README.md) for what those are and why each is built as the Moodle plugin type it is.
+
+Moodle core lives in [`moodle/`](moodle) as a **git submodule** pinned to the `MOODLE_502_STABLE` branch, rather than baked into a pre-built image — the real source tree is what runs, so the exact Moodle version is explicit and pluggable via the standard Moodle plugin-directory layout (`moodle/local/vrtracking`, etc.), the same one Moodle core itself uses.
 
 ## Local development
 
-Requires Docker and Docker Compose.
+Requires Docker, Docker Compose, and Git.
 
 ```bash
+git clone --recurse-submodules <this-repo-url>
+# or, if already cloned without --recurse-submodules:
+git submodule update --init
+
 cp .env.example .env    # adjust values as needed
 docker compose up -d
 ```
 
-Moodle will be reachable at `http://localhost:8080` (or whatever `MOODLE_HTTP_PORT` you set in `.env`) once the first-run install finishes — this can take a few minutes on first boot while the database initializes and Moodle installs itself. Log in with the `MOODLE_ADMIN_USER` / `MOODLE_ADMIN_PASSWORD` from your `.env`.
+Wait for the `db` service to report healthy (`docker compose ps`), then run the one-time database install (only needed the first time, or after a `docker compose down -v`):
+
+```bash
+docker compose exec webserver php admin/cli/install_database.php \
+  --agree-license \
+  --fullname="ImmerseTech LMS" \
+  --shortname="ImmerseTech" \
+  --adminuser=admin \
+  --adminpass=changeme \
+  --adminemail=admin@immersetech.example
+```
+
+Use the same values as `MOODLE_ADMIN_USER` / `MOODLE_ADMIN_PASSWORD` / `MOODLE_ADMIN_EMAIL` in your `.env`. Moodle will then be reachable at `http://localhost:8080` (or whatever `MOODLE_HTTP_PORT` you set).
+
+If the install fails with a "dataroot is not writable" error, the `moodledata` volume needs its permissions fixed once:
+
+```bash
+docker compose exec -u root webserver chown -R www-data:www-data /var/www/moodledata
+```
 
 To stop:
 
