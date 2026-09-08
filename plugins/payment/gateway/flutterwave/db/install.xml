@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<XMLDB PATH="payment/gateway/flutterwave/db" VERSION="20260908" COMMENT="XMLDB file for the Flutterwave payment gateway plugin"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="../../../../lib/xmldb/xmldb.xsd"
+>
+  <TABLES>
+    <TABLE NAME="paygw_flutterwave" COMMENT="Stores Flutterwave-specific information for each completed payment.">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="paymentid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Foreign key to the core payments table."/>
+        <FIELD NAME="fw_transactionid" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" COMMENT="The Flutterwave transaction id."/>
+        <FIELD NAME="fw_txref" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="The client-generated tx_ref for this transaction, if provided."/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="paymentid" TYPE="foreign-unique" FIELDS="paymentid" REFTABLE="payments" REFFIELDS="id"/>
+      </KEYS>
+    </TABLE>
+  </TABLES>
+</XMLDB>
