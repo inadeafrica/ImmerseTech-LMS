@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<XMLDB PATH="local/vrtracking/db" VERSION="20260908" COMMENT="XMLDB file for Moodle local/vrtracking"
+       xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+>
+  <TABLES>
+    <TABLE NAME="local_vrtracking_session" COMMENT="One row per VR module completion/progress event reported by the VR partner platform (spec 5.4, 9.2).">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Trainee this session belongs to."/>
+        <FIELD NAME="cmid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Course module id of the VR practical/lesson."/>
+        <FIELD NAME="competencyid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Linked core_competency competency id, if this module is mapped to one."/>
+        <FIELD NAME="externalsessionid" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="Partner platform's own session/attempt id; used to de-duplicate repeated webhook deliveries."/>
+        <FIELD NAME="status" TYPE="char" LENGTH="20" NOTNULL="true" SEQUENCE="false" COMMENT="not_started | in_progress | completed"/>
+        <FIELD NAME="timeontasksecs" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="score" TYPE="number" LENGTH="10" DECIMALS="2" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="replayurl" TYPE="char" LENGTH="1333" NOTNULL="false" SEQUENCE="false" COMMENT="Session replay / performance log URL surfaced to assessors for sign-off (spec 5.6)."/>
+        <FIELD NAME="rawpayload" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="Raw partner payload, retained for audit/debugging."/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="userid" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="cmid" UNIQUE="false" FIELDS="cmid"/>
+        <INDEX NAME="externalsessionid" UNIQUE="false" FIELDS="externalsessionid"/>
+      </INDEXES>
+    </TABLE>
+  </TABLES>
+</XMLDB>
