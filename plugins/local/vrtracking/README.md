@@ -4,23 +4,13 @@ Moodle local plugin scaffold for VR Simulation Tracking (spec [5.4](../../../doc
 
 ## Status
 
-Core structure implemented; partner-specific mapping still open. The webhook entry point, DB schema, capability/service definitions, and NDPR privacy provider are in place and installable; the course-module-to-competency mapping and the actual `core_competency` evidence write are stubbed pending a decision on how that mapping is authored (see TODOs in `classes/session_repository.php` and `classes/competency_updater.php`).
+Scaffolded, not yet implemented. `version.php` and the language string file are in place so the plugin installs cleanly; no functional code yet.
 
-## What's here
+## Planned scope
 
-- `db/services.php` + `classes/external/record_completion.php` — the `local_vrtracking_record_completion` external function the VR partner platform calls on completion/progress (webhook via Moodle's own webservice REST endpoint, authenticated with a token restricted to the `local_vrtracking_partner` service — see `db/access.php`).
-- `db/install.xml` — `local_vrtracking_session` table: one row per completion/progress event, including time-on-task, score, and a session replay URL.
-- `classes/session_repository.php` — persistence for session records; `find_linked_competency()` is the one open mapping decision (TODO).
-- `classes/competency_updater.php` — on a `completed` event, hands the session off as pending evidence rather than auto-approving it, per spec 5.6's assessor-sign-off requirement (TODO: wire to `\core_competency\api::add_evidence()` once the mapping above lands).
-- `classes/privacy/provider.php` — NDPR export/delete-my-data support (spec 5.13) for the session table.
-- `settings.php` — admin settings page (enable/disable, webservice setup pointer).
-- `tests/` — PHPUnit coverage for `session_repository`, the `record_completion` webhook (capability enforcement, parameter validation, success path), and the privacy provider. Run against a real Moodle install — see `../README.md#running-the-tests`.
-
-## Not yet built
-
-- Course-module ⇄ competency mapping authoring UI/convention.
-- Actual `core_competency` evidence write and assessor sign-off notification.
-- Session replay/performance log surfaced in the gradebook/competency UI for instructors and Qualified Assessors (data is captured; the review UI isn't built).
+- A webhook endpoint that receives completion status, time-on-task, and performance score from the VR partner platform (xAPI/SCORM package or JSON webhook, per [Section 9.1](../../../docs/SPECIFICATION.md#91-partner-selection-criteria)).
+- Logic to update the relevant trainee's competency matrix entry for the linked skill once a VR module is marked complete, so it can satisfy competency requirements the same way a physical lab sign-off does (5.5, 5.6).
+- Session replay/performance log links surfaced to instructors and Qualified Assessors for competency sign-off review.
 
 ## Why a `local` plugin
 

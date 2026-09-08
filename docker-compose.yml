@@ -37,10 +37,6 @@ services:
       - moodledata:/var/www/moodledata
       # Custom add-on plugins land here as they're built — see plugins/README.md.
       - ./plugins/local/vrtracking:/var/www/html/local/vrtracking
-      - ./plugins/availability/condition/safetygating:/var/www/html/availability/condition/safetygating
-      - ./plugins/payment/gateway/paystack:/var/www/html/payment/gateway/paystack
-      - ./plugins/payment/gateway/flutterwave:/var/www/html/payment/gateway/flutterwave
-      - ./plugins/plagiarism/aicontent:/var/www/html/plagiarism/aicontent
 
 volumes:
   db_data:
